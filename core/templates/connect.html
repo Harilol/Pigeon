@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Pigeon</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+        height: 100%;
+        font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f8f6f3;
+        color: #2d2a26;
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    body {
+        animation: fadeIn 0.35s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---------- Header ---------- */
+    header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 28px;
+        background: #f8f6f3;
+        height: 56px;
+        border-bottom: 1px solid #ebe5dc;
+    }
+    .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        color: #2d2a26;
+        letter-spacing: -0.02em;
+    }
+    .logo svg { width: 22px; height: 22px; color: #d97706; }
+    header nav a {
+        font-size: 13px;
+        color: #8a8377;
+        transition: color 0.15s;
+        font-weight: 500;
+    }
+    header nav a:hover { color: #2d2a26; }
+
+    /* ---------- Layout ---------- */
+    .container {
+        display: flex;
+        gap: 16px;
+        max-width: 1600px;
+        height: calc(100vh - 56px);
+        padding: 24px 28px;
+        margin: 0 auto;
+    }
+
+    .panel {
+        background: #fffdf9;
+        border: 1px solid #ebe5dc;
+        border-radius: 20px;
+        padding: 28px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 3px rgba(45, 42, 38, 0.03);
+    }
+    .left  { flex: 0 0 400px; }
+    .right { flex: 1; overflow: hidden; }
+
+    /* ---------- Section headers ---------- */
+    .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #2d2a26;
+        letter-spacing: -0.01em;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-title::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #d97706;
+    }
+
+    /* ---------- Form fields ---------- */
+    label {
+        display: block;
+        font-size: 11px;
+        color: #8a8377;
+        margin-bottom: 6px;
+        margin-top: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 600;
+    }
+    label:first-of-type { margin-top: 0; }
+
+    input[type="text"], input[type="password"], select {
+        width: 100%;
+        padding: 10px 14px;
+        background: #fffdf9;
+        border: 1.5px solid #ebe5dc;
+        border-radius: 10px;
+        font-size: 13px;
+        color: #2d2a26;
+        font-family: inherit;
+        transition: border-color 0.15s, background 0.15s;
+        font-weight: 500;
+    }
+    input:hover, select:hover { border-color: #d4cabb; }
+    input:focus, select:focus {
+        outline: none;
+        border-color: #d97706;
+        background: #fff;
+    }
+    input::placeholder { color: #b8b0a2; }
+
+    select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8377' stroke-width='2.5' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 34px;
+    }
+
+    /* ---------- Buttons ---------- */
+    .btn-primary {
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        background: #2d2a26;
+        color: #fffdf9;
+        border: none;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+        font-family: inherit;
+    }
+    .btn-primary:hover:not(:disabled) { background: #1a1815; }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #status {
+        margin-top: 12px;
+        font-size: 12px;
+        min-height: 16px;
+        transition: color 0.2s;
+        font-weight: 500;
+    }
+    .status-ok   { color: #65a30d; }
+    .status-err  { color: #dc2626; }
+    .status-info { color: #d97706; }
+
+    /* ---------- Divider ---------- */
+    .divider {
+        margin: 24px 0;
+        border: none;
+        border-top: 1px dashed #ebe5dc;
+    }
+
+    /* ---------- Chat area ---------- */
+    #chat-box {
+        flex: 1;
+        overflow-y: auto;
+        border: 1.5px solid #ebe5dc;
+        border-radius: 14px;
+        padding: 18px;
+        background: #fdfbf7;
+        margin-bottom: 14px;
+        min-height: 0;
+    }
+
+    .msg {
+        margin-bottom: 14px;
+        padding: 12px 16px;
+        border-radius: 14px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        word-wrap: break-word;
+        animation: msgIn 0.2s ease-out;
+        font-weight: 500;
+    }
+    @keyframes msgIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg-user {
+        background: #2d2a26;
+        color: #fffdf9;
+        border: 1.5px solid #2d2a26;
+        margin-left: 32px;
+    }
+    .msg-ai {
+        background: #fffdf9;
+        border: 1.5px solid #ebe5dc;
+        margin-right: 32px;
+        color: #2d2a26;
+    }
+    .msg-err {
+        background: #fef2f2;
+        border: 1.5px solid #fecaca;
+        color: #b91c1c;
+        margin-right: 32px;
+    }
+
+    .msg-user code {
+        background: rgba(255, 253, 249, 0.1);
+        border-color: rgba(255, 253, 249, 0.2);
+        color: #fde68a;
+    }
+
+    .msg code {
+        display: block;
+        background: #f5f1e8;
+        border: 1px solid #ebe5dc;
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+        font-size: 12px;
+        margin: 8px 0;
+        color: #92400e;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-x: auto;
+    }
+
+    /* ---------- Chat input ---------- */
+    .chat-input-row { display: flex; gap: 10px; }
+    #user-question {
+        flex: 1;
+        padding: 13px 18px;
+        background: #fffdf9;
+        border: 1.5px solid #ebe5dc;
+        border-radius: 12px;
+        font-size: 13.5px;
+        color: #2d2a26;
+        font-family: inherit;
+        transition: border-color 0.15s, background 0.15s;
+        font-weight: 500;
+    }
+    #user-question:hover { border-color: #d4cabb; }
+    #user-question:focus { outline: none; border-color: #d97706; background: #fff; }
+    #user-question::placeholder { color: #b8b0a2; }
+
+    .btn-send {
+        padding: 13px 26px;
+        background: #d97706;
+        color: #fffdf9;
+        border: none;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+        font-family: inherit;
+    }
+    .btn-send:hover:not(:disabled) { background: #b45309; }
+    .btn-send:active:not(:disabled) { transform: scale(0.98); }
+    .btn-send:disabled { background: #d4cabb; color: #fffdf9; cursor: not-allowed; }
+
+    /* ---------- Result table ---------- */
+    .result-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+        font-size: 12px;
+        background: #fffdf9;
+        border-radius: 10px;
+        overflow: hidden;
+        display: block;
+        overflow-x: auto;
+        border: 1.5px solid #ebe5dc;
+    }
+    .result-table th {
+        background: #f5f1e8;
+        color: #92400e;
+        text-align: left;
+        padding: 10px 14px;
+        font-weight: 700;
+        white-space: nowrap;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .result-table td {
+        padding: 10px 14px;
+        border-top: 1px solid #ebe5dc;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #2d2a26;
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+        font-weight: 500;
+    }
+    .result-table tr:hover td { background: #fdfbf7; }
+
+    /* ---------- Misc ---------- */
+    .link-muted {
+        font-size: 11.5px;
+        color: #8a8377;
+        cursor: pointer;
+        transition: color 0.15s;
+        font-weight: 600;
+    }
+    .link-muted:hover { color: #d97706; }
+
+    .hint {
+        font-size: 11.5px;
+        color: #8a8377;
+        margin-top: 8px;
+        line-height: 1.5;
+        font-weight: 500;
+    }
+    .hint a { color: #d97706; font-weight: 600; }
+    .hint a:hover { text-decoration: underline; }
+
+    /* ---------- Scrollbar ---------- */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #ebe5dc; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #d4cabb; }
+        /* ---------- Sidebar ---------- */
+    .sidebar {
+        flex: 0 0 240px;
+        background: #fffdf9;
+        border: 1.5px solid #ebe5dc;
+        border-radius: 20px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+    .sidebar-title {
+        font-size: 11px;
+        color: #8a8377;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 700;
+    }
+    .btn-new {
+        background: #2d2a26;
+        color: #fffdf9;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+        transition: background 0.15s;
+    }
+    .btn-new:hover { background: #1a1815; }
+
+    .conv-list {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .conv-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #2d2a26;
+        font-weight: 500;
+        transition: background 0.15s;
+        position: relative;
+        overflow: hidden;
+    }
+    .conv-item:hover { background: #f5f1e8; }
+    .conv-item.active {
+        background: #f5f1e8;
+        color: #92400e;
+        font-weight: 700;
+    }
+    .conv-item-title {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 12.5px;
+    }
+    .conv-item-delete {
+        opacity: 0;
+        color: #8a8377;
+        font-size: 16px;
+        line-height: 1;
+        padding: 2px 4px;
+        cursor: pointer;
+        transition: opacity 0.15s, color 0.15s;
+        border-radius: 4px;
+    }
+    .conv-item:hover .conv-item-delete { opacity: 1; }
+    .conv-item-delete:hover { color: #dc2626; background: #fef2f2; }
+
+    .conv-empty {
+        font-size: 12px;
+        color: #b8b0a2;
+        text-align: center;
+        padding: 20px 10px;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <a href="/" class="logo">
+<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+	<path d="M0 0h24v24H0z" fill="none" />
+	<g fill="none">
+		<path fill="#0c6fff" d="M10.306 12.482c-.15-.11-.27-.1-.791.15c-.52.25-1.241.67-2.693 1.431a.35.35 0 0 0-.16.48a.34.34 0 0 0 .47.16c1.002-.46 1.772-.81 2.253-1c-.18.59-.48 1.441-.821 2.272q-.405 1.031-.94 2.002a1.8 1.8 0 0 1-.411.56h-.13l-.38-.06c-.361-.09-.721-.22-.922-.28l-4.153-1.301l1.33-.571a.32.32 0 0 0 .191-.41a.31.31 0 0 0-.4-.18c-.64.22-2.522.92-2.543.93a.32.32 0 0 0-.19.4q.28.862.44 1.752c.18.911.311 1.822.461 2.733q.054.661.18 1.31c.06.3.223.57.46.762c.237.147.513.217.791.2q.652-.08 1.272-.3c.68-.2 1.36-.42 2.001-.651c.64-.23 1.332-.48 2.002-.73a75 75 0 0 0 2.502-1.002c.5-.22 1.001-.46 1.632-.76a4.3 4.3 0 0 0 1.321-.921c.219-.248.334-.57.32-.901a12 12 0 0 0-1.23-3.193a11.7 11.7 0 0 0-1.863-2.882m1.721 6.465a4 4 0 0 1-.76.41L7.152 21.01l-3.913 1.45c-.2.07-.48.2-.75.27s-.43.281-.53-.45c-.081-.36-.121-.74-.151-.91c-.22-.901-.4-1.812-.64-2.713q-.136-.57-.33-1.12c.57.23 1.57.64 2.571 1c.771.29 1.522.57 2.062.75q.707.272 1.451.401c.343.07.698.013 1.001-.16a6.2 6.2 0 0 0 1.462-2.522q.612-1.592 1-3.253c.3.51.661 1.25 1.002 2.002a11 11 0 0 1 1 2.872c-.04.13-.21.22-.36.32" />
+		<path fill="#020202" d="M15.49 1.892c.22.36.295.789.21 1.201c0 .12-.44.69-.54.951a.62.62 0 0 0 0 .53a1 1 0 0 0 .35.37c.18.121.42.181.57.281c.298.2.55.458.741.76a.82.82 0 0 1 .13.802q-.096.182-.25.32a2 2 0 0 1-.37.24q-.226.074-.43.19a.45.45 0 0 0-.22.3a.75.75 0 0 0 .19.561c.21.26.64.59.72.8a.88.88 0 0 1-.11.861c-.403.43-.89.77-1.431 1.001a.31.31 0 0 0-.14.42a.32.32 0 0 0 .43.14a5 5 0 0 0 1.691-1.1a1.52 1.52 0 0 0 .25-1.522a3.3 3.3 0 0 0-.49-1a2.2 2.2 0 0 0 .44-.28a1.7 1.7 0 0 0 .461-.541a1.5 1.5 0 0 0 0-1.371a3.37 3.37 0 0 0-1.131-1.392l-.29-.16c.162-.268.287-.558.37-.86a2.93 2.93 0 0 0-.4-2.403a1.84 1.84 0 0 0-1.632-.8a2.19 2.19 0 0 0-1.861 1.16c-.333.85-.558 1.738-.671 2.643c-.19.866-.482 1.706-.87 2.502a6.9 6.9 0 0 1-1.512 2.062c-.18.16-.59.56-1.001.92a5 5 0 0 1-.61.451a8.4 8.4 0 0 0-1.442-1.2c.13-.944.13-1.9 0-2.843a4.8 4.8 0 0 0-.81-2.002c-.31-.42-1.001-.95-1.402-1.541a.87.87 0 0 1-.24-.761a.31.31 0 0 1 .24-.18c.21-.068.43-.098.65-.09c.48-.003.956.1 1.392.3c.13.08.15.23.2.34q.082.213.21.4q.075.106.18.18a.8.8 0 0 0 .41.16q.399.005.792-.06c.212.003.422.044.62.12c.192.082.366.201.51.351q.122.148.18.33q.068.19.06.39c0 .07-.11.341-.12.511a.53.53 0 0 0 .1.41a.35.35 0 0 0 .501 0s.18-.08.28-.9c.02-.225 0-.452-.06-.67a1.7 1.7 0 0 0-.37-.541a2.15 2.15 0 0 0-.75-.64a3.75 3.75 0 0 0-1.592-.321a2.4 2.4 0 0 0-.19-.48a1.15 1.15 0 0 0-.4-.45A4.4 4.4 0 0 0 4.66.18a1.72 1.72 0 0 0-1.7 1.09a1.77 1.77 0 0 0 .21 1.482a15.6 15.6 0 0 0 1.792 1.832c.37.44.64.955.79 1.51c.177.775.248 1.57.21 2.363a2 2 0 0 0-.31-.07a3.6 3.6 0 0 0-1.691.21A2.69 2.69 0 0 0 2.118 11a3.1 3.1 0 0 0 1.251 2.443a2 2 0 0 0 0 .22q.02.324.1.64l.14.57c.063.331.24.63.5.842c.221.11.531.15.862-.28l.21-.321l.78-1.111a.36.36 0 0 0-.56-.44l-.84 1.19l-.08.12a.8.8 0 0 1-.08-.16l-.12-.55c0-.14 0-.29-.061-.44a1.1 1.1 0 0 1 0-.36a.42.42 0 0 0-.15-.36a2.33 2.33 0 0 1-1.001-1.883A1.71 1.71 0 0 1 4.27 9.59a2.55 2.55 0 0 1 1.231-.13c.388.085.739.292 1.001.59c.14.15.49.621.76.861a1 1 0 0 0 .551.29a2 2 0 0 0 1.151-.46a19 19 0 0 0 1.562-1.291a8 8 0 0 0 1.751-2.452c.446-.877.782-1.804 1.001-2.763c.08-.803.258-1.593.53-2.352a1.09 1.09 0 0 1 .931-.59c.32 0 .58.28.751.6m8.488 13.301a12.5 12.5 0 0 0-.791-3.003a2.4 2.4 0 0 0-.51-.84a1.4 1.4 0 0 0-.781-.32c-.484.002-.965.07-1.431.2c-.693.195-1.4.342-2.112.44a2.56 2.56 0 0 1-1.272-.22a.36.36 0 0 0-.3.65a3.4 3.4 0 0 0 1.592.37q1.137-.081 2.252-.32q.431-.092.87-.13c.581 0 .541.21.611.39q.326.935.53 1.902c.49 2.002 0 2.162-.88 2.092c-1.151-.09-2.372-.74-3.443-.61a1.06 1.06 0 0 0-.56.24q-.273.314-.501.66q-.36.397-.771.741a5 5 0 0 1-.86.6l-1.112.491a.31.31 0 0 0-.19.4a.31.31 0 0 0 .39.2l1.222-.45a6 6 0 0 0 1-.61q.486-.345.911-.761q.206-.218.38-.46a.24.24 0 0 1 .13-.09c.511.02 1.014.135 1.482.34a8.8 8.8 0 0 0 1.772.49a2.87 2.87 0 0 0 1.791-.37a1.18 1.18 0 0 0 .51-.76a3.9 3.9 0 0 0 .07-1.262" />
+	</g>
+</svg>
+
+        Pigeon
+    </a>
+    <nav>
+        <a href="/">← Home</a>
+    </nav>
+</header>
+
+<div class="container">
+
+    <!-- SIDEBAR: conversation list -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-title">Chats</span>
+            <button id="new-conv" class="btn-new">+ New</button>
+        </div>
+        <div class="conv-list" id="conv-list">
+            <!-- JS will fill this -->
+        </div>
+    </aside>
+
+    <!-- LEFT PANEL: unchanged -->
+    <div class="panel left">
+        <div class="section-title">Connect to Postgres</div>
+        <form id="dbform" autocomplete="off">
+            <label>Host</label>
+            <input type="text" id="db_host" name="db_host" value="localhost">
+            <label>Username</label>
+            <input type="text" id="db_user" name="db_user" value="postgres">
+            <label>Password</label>
+            <input type="password" id="db_pass" name="db_pass">
+            <label>Database</label>
+            <input type="text" id="db_name" name="db_name" value="postgres">
+            <label>Port</label>
+            <input type="text" id="db_port" name="db_port" value="5432">
+            <button type="submit" class="btn-primary">Connect Database</button>
+        </form>
+        <div id="status"></div>
+        <p style="margin-top:8px;">
+            <span id="forget-creds" class="link-muted">Forget saved credentials</span>
+        </p>
+
+        <hr class="divider">
+
+        <div class="section-title">AI Settings</div>
+        <label>Provider</label>
+        <select id="providerSelect">
+            <option value="https://api.openai.com/v1">OpenAI</option>
+            <option value="https://openrouter.ai/api/v1">OpenRouter</option>
+            <option value="https://api.groq.com/openai/v1">Groq</option>
+            <option value="https://api.deepseek.com/v1">DeepSeek</option>
+            <option value="https://api.together.xyz/v1">Together AI</option>
+            <option value="http://localhost:11434/v1">Ollama (Local)</option>
+        </select>
+        <label>Base URL</label>
+        <input type="text" id="baseUrlInput" value="https://openrouter.ai/api/v1">
+        <label>API Key</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-...">
+        <label>Model</label>
+        <input type="text" id="modelInput" placeholder="e.g. gpt-4o-mini">
+    <div style="margin-top: 14px; padding: 12px 14px; background: #fef3c7; border: 1.5px solid #fcd34d; border-radius: 10px; font-size: 11.5px; line-height: 1.55; color: #78350f; font-weight: 500;">
+        <b>⚠️ Free models are unreliable.</b> Many free models (especially on OpenRouter) fail at tool calling — you'll see raw XML like <code>&lt;tool_call&gt;</code> in the chat instead of answers.<br><br>
+        For solid results, use:<br>
+        • <b>OpenAI:</b> <code>gpt-4o-mini</code><br>
+        • <b>DeepSeek:</b> <code>deepseek-chat</code><br>
+        • <b>OpenRouter:</b> <code>openai/gpt-4o-mini</code><br><br>
+        <a href="https://openrouter.ai/models?supported_parameters=tools" target="_blank" style="color: #92400e; text-decoration: underline; font-weight: 600;">Browse all tool-capable models →</a>
+    </div>
+    </div>
+
+    <!-- RIGHT PANEL: chat -->
+    <div class="panel right">
+        <div class="section-title" id="chat-header">Chat</div>
+
+        <div id="chat-box">
+            <div class="msg msg-ai">Ask me anything about your database...</div>
+        </div>
+
+        <form id="chat-form" class="chat-input-row">
+            <input type="text" id="user-question" placeholder="Ask a question about your data..." autocomplete="off">
+            <button type="submit" class="btn-send">Send</button>
+        </form>
+    </div>
+
+</div>
+
+<script>
+// ================= CONVERSATION STORE =================
+const CONV_KEY = 'pigeon_conversations';
+const ACTIVE_KEY = 'pigeon_active_conv';
+const CREDS_KEY = 'db_creds';
+const AI_KEY = 'ai_settings';
+
+function loadConversations() {
+    try { return JSON.parse(localStorage.getItem(CONV_KEY) || '[]'); }
+    catch { return []; }
+}
+function saveConversations(list) {
+    localStorage.setItem(CONV_KEY, JSON.stringify(list));
+}
+function getActiveId() {
+    return localStorage.getItem(ACTIVE_KEY);
+}
+function setActiveId(id) {
+    localStorage.setItem(ACTIVE_KEY, id);
+}
+function makeId() {
+    return 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+}
+function createConversation() {
+    const list = loadConversations();
+    const conv = { id: makeId(), title: 'New chat', messages: [] };
+    list.unshift(conv); // newest on top
+    saveConversations(list);
+    setActiveId(conv.id);
+    return conv;
+}
+function getActiveConversation() {
+    const id = getActiveId();
+    const list = loadConversations();
+    return list.find(c => c.id === id) || null;
+}
+function updateConversation(id, updater) {
+    const list = loadConversations();
+    const idx = list.findIndex(c => c.id === id);
+    if (idx === -1) return;
+    updater(list[idx]);
+    saveConversations(list);
+}
+function deleteConversation(id) {
+    let list = loadConversations();
+    list = list.filter(c => c.id !== id);
+    saveConversations(list);
+    if (getActiveId() === id) {
+        if (list.length > 0) setActiveId(list[0].id);
+        else setActiveId('');
+    }
+}
+
+// ================= RENDER =================
+function renderConversations() {
+    const listEl = document.getElementById('conv-list');
+    const list = loadConversations();
+    const activeId = getActiveId();
+    listEl.innerHTML = '';
+    if (list.length === 0) {
+        listEl.innerHTML = '<div class="conv-empty">No chats yet.<br>Click "+ New" to start.</div>';
+        return;
+    }
+    list.forEach(conv => {
+        const el = document.createElement('div');
+        el.className = 'conv-item' + (conv.id === activeId ? ' active' : '');
+        el.innerHTML = '<div class="conv-item-title"></div><span class="conv-item-delete" title="Delete">×</span>';
+        el.querySelector('.conv-item-title').textContent = conv.title;
+        el.addEventListener('click', (e) => {
+            if (e.target.classList.contains('conv-item-delete')) return;
+            setActiveId(conv.id);
+            renderConversations();
+            renderChat();
+        });
+        el.querySelector('.conv-item-delete').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!confirm('Delete this chat?')) return;
+            deleteConversation(conv.id);
+            renderConversations();
+            renderChat();
+        });
+        listEl.appendChild(el);
+    });
+}
+
+function renderChat() {
+    const chatBox = document.getElementById('chat-box');
+    const header = document.getElementById('chat-header');
+    chatBox.innerHTML = '';
+
+    const conv = getActiveConversation();
+    if (!conv) {
+        header.textContent = 'Chat';
+        chatBox.innerHTML = '<div class="msg msg-ai">Create a new chat to begin.</div>';
+        return;
+    }
+    header.textContent = conv.title;
+
+    if (conv.messages.length === 0) {
+        chatBox.innerHTML = '<div class="msg msg-ai">Ask me anything about your database...</div>';
+        return;
+    }
+    conv.messages.forEach(m => {
+        const div = document.createElement('div');
+        if (m.type === 'user') {
+            div.className = 'msg msg-user';
+            div.innerHTML = '<b>You:</b> ' + escapeHtml(m.text);
+        } else if (m.type === 'error') {
+            div.className = 'msg msg-err';
+            div.innerHTML = '<b>AI:</b> ' + escapeHtml(m.text);
+        } else {
+            div.className = 'msg msg-ai';
+            div.innerHTML = m.html;
+        }
+        chatBox.appendChild(div);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// ================= HELPERS =================
+function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+// Render minimal markdown: **bold**, `code`, and line breaks
+function renderMarkdown(s) {
+    let html = escapeHtml(s);
+    // **bold**
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // `inline code`
+    html = html.replace(/`([^`]+)`/g, '<code style="background:#f5f1e8;border:1px solid #ebe5dc;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;color:#92400e;">$1</code>');
+    // line breaks
+    html = html.replace(/\n/g, '<br>');
+    return html;
+}
+
+// ================= DB CREDENTIALS =================
+function saveCredentials() {
+    localStorage.setItem(CREDS_KEY, JSON.stringify({
+        db_host: document.getElementById('db_host').value,
+        db_user: document.getElementById('db_user').value,
+        db_pass: document.getElementById('db_pass').value,
+        db_name: document.getElementById('db_name').value,
+        db_port: document.getElementById('db_port').value
+    }));
+}
+function loadCredentials() { try { return JSON.parse(localStorage.getItem(CREDS_KEY) || 'null'); } catch { return null; } }
+function fillCredentials(c) {
+    if (!c) return;
+    document.getElementById('db_host').value = c.db_host || '';
+    document.getElementById('db_user').value = c.db_user || '';
+    document.getElementById('db_pass').value = c.db_pass || '';
+    document.getElementById('db_name').value = c.db_name || '';
+    document.getElementById('db_port').value = c.db_port || '';
+}
+function forgetCredentials() {
+    localStorage.removeItem(CREDS_KEY);
+    document.getElementById('db_host').value = 'localhost';
+    document.getElementById('db_user').value = 'postgres';
+    document.getElementById('db_pass').value = '';
+    document.getElementById('db_name').value = 'postgres';
+    document.getElementById('db_port').value = '5432';
+    const s = document.getElementById('status');
+    s.textContent = 'Credentials forgotten.';
+    s.className = 'status-info';
+}
+
+// ================= AI SETTINGS =================
+function saveAISettings() {
+    localStorage.setItem(AI_KEY, JSON.stringify({
+        base_url: document.getElementById('baseUrlInput').value,
+        api_key: document.getElementById('apiKeyInput').value,
+        model: document.getElementById('modelInput').value
+    }));
+}
+function loadAISettings() { try { return JSON.parse(localStorage.getItem(AI_KEY) || 'null'); } catch { return null; } }
+function fillAISettings(s) {
+    if (!s) return;
+    document.getElementById('baseUrlInput').value = s.base_url || 'https://openrouter.ai/api/v1';
+    document.getElementById('apiKeyInput').value = s.api_key || '';
+    document.getElementById('modelInput').value = s.model || '';
+}
+
+// ================= UI EVENTS =================
+document.getElementById('providerSelect').addEventListener('change', function() {
+    document.getElementById('baseUrlInput').value = this.value;
+});
+
+document.getElementById('dbform').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const status = document.getElementById('status');
+    status.className = 'status-info';
+    status.textContent = 'Connecting...';
+    const formData = new FormData(e.target);
+    fetch('', {
+        method: 'POST', body: formData,
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { status.className = 'status-err'; status.textContent = 'Error: ' + data.error; }
+        else { status.className = 'status-ok'; status.textContent = 'Connected! You can chat now.'; saveCredentials(); }
+    })
+    .catch(err => { status.className = 'status-err'; status.textContent = 'Network error: ' + err.message; });
+});
+
+document.getElementById('chat-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // Ensure a conversation exists
+    let conv = getActiveConversation();
+    if (!conv) {
+        conv = createConversation();
+        renderConversations();
+    }
+    const convId = conv.id;
+
+    const input = document.getElementById('user-question');
+    const sendBtn = document.querySelector('.btn-send');
+    const chatBox = document.getElementById('chat-box');
+    const question = input.value.trim();
+    if (!question) return;
+
+    input.disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.textContent = '...';
+
+    // If this is the first message, use it as the title
+    if (conv.messages.length === 0) {
+        const title = question.length > 32 ? question.slice(0, 32) + '…' : question;
+        updateConversation(convId, c => { c.title = title; });
+        renderConversations();
+        document.getElementById('chat-header').textContent = title;
+    }
+
+    // Add user message
+    updateConversation(convId, c => c.messages.push({ type: 'user', text: question }));
+    renderChat();
+
+    // Add thinking placeholder (not saved)
+    const thinkingMsg = document.createElement('div');
+    thinkingMsg.className = 'msg msg-ai';
+    thinkingMsg.textContent = 'AI: thinking...';
+    chatBox.appendChild(thinkingMsg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    input.value = '';
+
+    const formData = new FormData();
+    formData.append('q', question);
+    formData.append('db_host', document.getElementById('db_host').value);
+    formData.append('db_user', document.getElementById('db_user').value);
+    formData.append('db_pass', document.getElementById('db_pass').value);
+    formData.append('db_name', document.getElementById('db_name').value);
+    formData.append('db_port', document.getElementById('db_port').value);
+    formData.append('base_url', document.getElementById('baseUrlInput').value);
+    formData.append('api_key', document.getElementById('apiKeyInput').value);
+    formData.append('model', document.getElementById('modelInput').value);
+
+    try {
+        const res = await fetch('/ask-ai/', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '' }
+        });
+        const data = await res.json();
+
+        if (data.error) {
+            updateConversation(convId, c => c.messages.push({ type: 'error', text: data.error }));
+        } else if (data.answer) {
+            let html = '<b>AI:</b> ' + renderMarkdown(data.answer);
+            if (data.rows && data.rows.length > 0) {
+                html += '<table class="result-table"><thead><tr>';
+                data.columns.forEach(col => { html += '<th>' + escapeHtml(col) + '</th>'; });
+                html += '</tr></thead><tbody>';
+                data.rows.forEach(row => {
+                    html += '<tr>';
+                    row.forEach(cell => { html += '<td>' + escapeHtml(cell) + '</td>'; });
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+            }
+            updateConversation(convId, c => c.messages.push({ type: 'ai', html }));
+        } else {
+            updateConversation(convId, c => c.messages.push({ type: 'error', text: 'Unexpected response' }));
+        }
+    } catch (err) {
+        updateConversation(convId, c => c.messages.push({ type: 'error', text: 'Network error: ' + err.message }));
+    } finally {
+        input.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+        input.focus();
+        saveAISettings();
+        renderChat();
+    }
+});
+
+document.getElementById('new-conv').addEventListener('click', function() {
+    createConversation();
+    renderConversations();
+    renderChat();
+    document.getElementById('user-question').focus();
+});
+
+document.getElementById('forget-creds').addEventListener('click', function(e) {
+    e.preventDefault();
+    forgetCredentials();
+});
+
+// ================= INIT =================
+const savedCreds = loadCredentials();
+if (savedCreds) {
+    fillCredentials(savedCreds);
+    document.getElementById('dbform').dispatchEvent(new Event('submit', { cancelable: true }));
+}
+const savedAI = loadAISettings();
+if (savedAI) fillAISettings(savedAI);
+
+// If no conversations exist, don't auto-create — user clicks "+ New"
+if (!getActiveConversation() && loadConversations().length > 0) {
+    setActiveId(loadConversations()[0].id);
+}
+renderConversations();
+renderChat();
+</script>
+</body>
+</html>
