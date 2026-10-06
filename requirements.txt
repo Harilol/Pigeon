@@ -2,3 +2,6 @@ Django
 psycopg2-binary
 python-dotenv
 openai
+gunicorn
+dj-database-url
+whitenoise
