@@ -5,3 +5,4 @@ openai
 gunicorn
 dj-database-url
 whitenoise
+cryptography
