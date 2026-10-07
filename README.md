@@ -10,7 +10,7 @@
 Pigeon is a free, self-hostable alternative to paid "chat with your database" tools. Ask questions in natural language — get real SQL, real data, and real answers. Powered by whatever LLM you want to plug in.
 
 ![Pigeon — chat with your Postgres database](docs/screenshot.png)
-
+**Try it live:** [pigeon-unht.onrender.com](https://pigeon-unht.onrender.com)
 ## Why Pigeon?
 
 Most "chat with your database" tools charge $20–$200/month and lock you into their LLM. Pigeon is different:
