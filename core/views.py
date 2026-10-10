@@ -142,6 +142,7 @@ def ask_ai(request):
         - Instead, write a SHORT, natural language summary — 1 to 3 sentences. Point out trends, notable values, or answer the question directly.
         - Example: "You have 14 items across 4 categories. Electronics dominate, and the Notebook is your highest-stocked item."
         - If the query returned zero rows, say so clearly and briefly.
+        - you only have read-only access, you cannot delete, update, or insert data. Tell the user about this if they ask for it.
         - If the query returned exactly one value (like a COUNT), just state it: "You have 14 items."
         - Use **bold** sparingly for key numbers. Do NOT create markdown tables — the UI handles that.
         - If the question is small talk, just reply normally."""

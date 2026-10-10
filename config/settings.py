@@ -15,24 +15,24 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-import os
+# import os
 from cryptography.fernet import Fernet
 # Run Fernet.generate_key() once in python shell and paste it here
 FERNET_KEY = os.getenv("FERNET_KEY", "xLkbSzh9U2Q9zgaCAFv_yv67Y-wiCmZR5TcGd-mhr2Y=") 
+# import os
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
+# SECRET_KEY: read from env, fall back to a dev key
+SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-only-insecure-key-change-in-production')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+# DEBUG: default True locally, False in production
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+# ALLOWED_HOSTS: allow localhost + Render's hostname
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
-ALLOWED_HOSTS = []
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-
 
 # Application definition
 
@@ -130,7 +130,14 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
