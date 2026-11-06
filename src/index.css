@@ -1,0 +1,38 @@
+/* stylelint-disable at-rule-no-unknown */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background-color: #f8faf7;
+  color: #172321;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+
+::selection { background: rgba(83, 138, 106, .22); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd6ce; border: 2px solid transparent; border-radius: 8px; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: #aebeb2; border: 2px solid transparent; background-clip: padding-box; }
+
+::view-transition-old(root) { animation: page-out .24s ease both; }
+::view-transition-new(root) { animation: page-in .38s cubic-bezier(.2,.75,.2,1) both; }
+@keyframes page-out { to { opacity: 0; filter: blur(3px); transform: scale(.99); } }
+@keyframes page-in { from { opacity: 0; filter: blur(5px); transform: scale(1.015); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  ::view-transition-old(root),::view-transition-new(root) { animation: none; }
+}

@@ -663,11 +663,3 @@ def ask_ai(request):
         response["Allow"] = "POST"
         return response
     return _run_ai_request(request)
-
-
-def landing_page(request):
-    return render(request, "landing.html")
-
-
-def app_page(request):
-    return render(request, "connect.html")

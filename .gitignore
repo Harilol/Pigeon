@@ -1,9 +1,9 @@
-# ---------- Environment / secrets ----------
+# Environment files and secrets
 .env
 .env.*
 !.env.example
 
-# ---------- Python ----------
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -24,23 +24,30 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# ---------- Virtual environments ----------
 .venv/
 venv/
 ENV/
 env/
 ENV.bak/
 
-# ---------- Django ----------
+# Django
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
 /media/
 /staticfiles/
+backend/staticfiles/
 
-# ---------- IDE / editors ----------
+# Node
+node_modules/
+dist/
+dist-ssr/
+npm-debug.log*
+yarn-error.log*
+*.local
+
+# IDE and OS
 .vscode/
 .idea/
 *.swp
@@ -48,12 +55,7 @@ db.sqlite3-journal
 *~
 .DS_Store
 
-# ---------- Node (just in case) ----------
-node_modules/
-npm-debug.log*
-yarn-error.log*
-
-# ---------- Misc ----------
+# Tests and caches
 .cache/
 .pytest_cache/
 .coverage

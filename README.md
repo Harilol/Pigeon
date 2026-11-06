@@ -1,185 +1,133 @@
-# 🐦 Pigeon
+# Pigeon
 
-![Status](https://img.shields.io/badge/status-active-brightgreen)
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Python](https://img.shields.io/badge/python-3.10+-blue)
-![Django](https://img.shields.io/badge/Django-6.1+-green)
+Pigeon lets you explore PostgreSQL data with natural-language questions. Bring your own database and AI provider key; Pigeon sends a read-only query and shows the SQL and results.
 
-**Talk to your Postgres database in plain English. Open source. Bring your own AI key.**
-
-Pigeon is a free, self-hostable alternative to paid "chat with your database" tools. Ask questions in natural language — get real SQL, real data, and real answers. Powered by whatever LLM you want to plug in.
-
-![Pigeon — chat with your Postgres database](docs/screenshot.png)
-**Try it live:** [pigeon-unht.onrender.com](https://pigeon-unht.onrender.com)
-## Why Pigeon?
-
-Most "chat with your database" tools charge $20–$200/month and lock you into their LLM. Pigeon is different:
-
-- **Free forever.** No subscription. No credit card. MIT licensed.
-- **Bring your own key.** Use OpenAI, OpenRouter, Google Gemini, or Anthropic.
-- **Bring your own database.** Connect to supported public PostgreSQL endpoints when using the hosted service; self-hosters can opt in to local/private databases.
-- **Read-only queries.** Query parsing and PostgreSQL read-only transactions reject writes.
-- **You see the SQL.** Every answer shows the exact query that was executed.
+The repository contains a React/Vite frontend at the root and a Django API in [`backend/`](./backend/).
 
 ## Features
 
--  Natural language questions → real SQL
--  Read-only PostgreSQL transactions and parsed single-`SELECT` validation
--  Multi-provider: OpenAI, OpenRouter, Google Gemini, Anthropic
--  Multi-conversation sidebar (like ChatGPT)
--  Results rendered as tables in the chat
--  Database connection, statement, response-size, and request-rate limits
--  Warm, minimal UI — not another dark-mode dashboard
--  Zero-cost AI usage — you pay your provider directly
+- Connect to PostgreSQL and inspect its public-table schema.
+- Ask questions using OpenAI, OpenRouter, Google Gemini, or Anthropic.
+- Review the query and results returned with each response.
+- Run locally or deploy the frontend and API as separate services.
+- No shared/server-owned AI provider key: each user supplies their own.
 
-## Quick start
+## Local development
 
-### 1. Clone and install
+Requirements: Node.js 22.12+ and Python 3.12+.
+
+### 1. Install dependencies
+
+From the repository root:
 
 ```bash
-git clone https://github.com/Harilol/pigeon.git
-cd pigeon
+npm ci
 python -m venv .venv
-source .venv/bin/activate    # On Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+python -m pip install -r backend/requirements.txt
 ```
 
-### 2. Configure
+### 2. Configure the API
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Set `SECRET_KEY` in `backend/.env` to a new random value. For example:
+
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+The local example enables private database hosts so localhost and development databases work. Do not copy that setting into a public production deployment.
+
+### 3. Configure and run the frontend
+
+In another terminal, from the repository root:
 
 ```bash
 cp .env.example .env
+npm run dev
 ```
 
-Generate a local Django secret and replace the example `SECRET_KEY` (for example, `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`). Users provide their own AI provider key in the app; the server does not use or fall back to a server-owned provider key.
+`VITE_API_BASE_URL` defaults to the local API at `http://127.0.0.1:8000`.
 
-### 3. Run
+### 4. Start the API
+
+From the repository root:
 
 ```bash
+source .venv/bin/activate  # If not already active
+cd backend
 python manage.py migrate
 python manage.py runserver
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+Open the frontend URL printed by Vite (usually `http://localhost:5173`).
 
-### 4. Use
+## Tests and checks
 
-1. Click **Get started**.
-2. Enter your Postgres credentials. Click **Connect Database**.
-3. In **AI Settings**, pick a supported provider, paste your API key, and enter a model name that supports **tool calling**.
-4. Ask questions in the chat.
+From the repository root:
 
-## ⚠️ Model selection matters
-
-**Free and small models are unreliable at tool calling.** You may see raw XML like `<tool_call>` in the chat instead of a proper answer. This isn't a bug in Pigeon — it's a limitation of the model itself. Some models work; some don't.
-
-**For the best experience, use one of these models:**
-
-| Provider | Model | Why |
-|---|---|---|
-| **OpenAI** | `gpt-4o-mini` | Fast, reliable tool calling |
-| **OpenRouter** | `openai/gpt-4o-mini` | Unified access to supported models |
-| **Google Gemini** | `gemini-2.5-flash` | Fast tool-capable model |
-| **Anthropic** | `claude-haiku-4-5` | Fast Claude model |
-
-**Avoid:** Models labeled "mini-free", "flash-lite", "reasoner", or anything with "preview" in the name. These usually don't support structured tool calling properly.
-
-**How to check if a model supports tools:**
-- [OpenRouter — tool-capable models](https://openrouter.ai/models?supported_parameters=tools)
-- [OpenAI — function calling docs](https://platform.openai.com/docs/guides/function-calling)
-
-## How it works
-
+```bash
+npm run lint
+npm run build
+cd backend
+python manage.py test
 ```
-Browser ──> Django ──> AI provider (with tool: run_sql)
-                 │
-                 └──> Postgres (SELECT only)
-```
-
-1. The browser sends the user's provider key, database connection details, and question to Django for that request.
-2. Django resolves and checks the database host, then reads the schema using a read-only PostgreSQL connection.
-3. The schema and question are sent to the selected, allowlisted AI provider.
-4. If the AI requests a query, Django parses it as one `SELECT` and executes it in a read-only transaction with connection, lock, and statement timeouts.
-5. Results are limited to 100 rows, 100 columns, and a bounded response size before being returned to the browser.
-
-## Guardrails
-
-- Requests are throttled per client IP (10 connection checks and 6 chat requests per minute by default). These limits protect the hosted service and do not limit the user's AI provider credits.
-- Public deployments reject database hosts that resolve to private, loopback, or other non-public IP addresses to prevent the service being used to reach internal networks. Self-hosters can explicitly enable private targets.
-- The AI key is required on every chat request. The server never uses a fallback key, and clients cannot choose an arbitrary AI URL; only the providers configured in the backend are accepted.
-- The database host is resolved and pinned to a checked address for each connection, with TLS required by default in production.
-- SQL is parsed as one PostgreSQL `SELECT`, write statements nested in a CTE are rejected, and known dangerous functions (filesystem, sequence mutation, network, and backend-control functions) are blocked. Queries run in a PostgreSQL read-only transaction with a 5-second statement timeout, a 1.5-second lock timeout, and a 5-second connection timeout.
-- Results are capped at 100 rows, 100 columns, 1,024 characters per cell, and 512 KB total.
-- Credentials are sent to the Pigeon backend while handling a request and are not persisted by the backend. The user's AI provider receives the question, schema, and query results. The browser may store connection and AI settings in local storage.
-
-Use a dedicated PostgreSQL role with only the minimum read privileges required. Do not connect as a database superuser: PostgreSQL read-only transactions prevent ordinary writes, but cannot make every installed database function side-effect-free.
 
 ## Production deployment
 
-The backend is intentionally fail-closed in production. Set these environment variables before starting it:
+Deploy the frontend and API separately:
 
-- `DEBUG=False`
-- `SECRET_KEY` — a fresh, random Django secret; do not reuse the development value.
-- `ALLOWED_HOSTS` — comma-separated backend hostnames, without schemes.
-- `CORS_ALLOWED_ORIGINS` — comma-separated exact frontend origins, including `https://`.
-- `DATABASE_URL` — a persistent Django-owned database for Django's internal state.
-- `REDIS_URL` — a Redis URL for rate limits shared by all workers.
-- `TRUSTED_PROXY_COUNT` — the number of trusted forwarding-proxy entries used to derive client IPs. Configure this for the hosting provider; do not trust forwarded headers when the app is directly exposed.
-- Frontend build variable `VITE_API_BASE_URL` — the backend's public HTTPS origin (for example, `https://api.example.com`). Set `CORS_ALLOWED_ORIGINS` to the frontend's HTTPS origin.
+1. **Frontend:** use the repository root as the build directory, run `npm ci` and `npm run build`, and publish `dist/` as a static site. Configure SPA fallback so routes such as `/app` serve `index.html`. Set `VITE_API_BASE_URL` to the public HTTPS origin of the API.
+2. **API:** set the service root directory to `backend/`, build with `./build.sh`, run migrations as a release step with `python manage.py migrate`, then start with:
 
-For a public deployment, leave `ALLOW_PRIVATE_DATABASE_HOSTS` unset or set it to `False`, and leave `DATABASE_SSLMODE` at `require`. Provision Redis and a persistent database before deploying; startup fails if these production dependencies or required origins/secrets are missing. Run migrations as a release/deploy step and serve the app with Gunicorn, for example:
+   ```bash
+   gunicorn config.wsgi:application --workers 2 --timeout 75 --access-logfile - --error-logfile -
+   ```
 
-```bash
-python manage.py migrate
-gunicorn config.wsgi:application --workers 2 --timeout 75 --access-logfile - --error-logfile -
-```
+Set these API environment variables in the hosting provider:
 
-The request limits can be adjusted with `CONNECT_REQUESTS_PER_MINUTE` and `ASK_REQUESTS_PER_MINUTE`. If Redis is unavailable, the API fails closed rather than silently disabling throttling.
+| Variable | Required | Purpose |
+|---|---:|---|
+| `DEBUG` | Yes | Set to `False`. |
+| `SECRET_KEY` | Yes | Fresh, random Django secret (at least 50 characters). |
+| `ALLOWED_HOSTS` | Yes | Comma-separated API hostnames, without schemes. |
+| `CORS_ALLOWED_ORIGINS` | Yes | Exact frontend HTTPS origin(s), comma-separated. |
+| `DATABASE_URL` | Yes | Persistent database for Django's own internal state. |
+| `REDIS_URL` | Yes | Redis for shared anonymous-request throttling. |
+| `TRUSTED_PROXY_COUNT` | Yes | Trusted proxy count for deriving client IPs; configure to match the host. |
+| `DATABASE_SSLMODE` | No | Defaults to `require` in production. |
+| `ALLOW_PRIVATE_DATABASE_HOSTS` | No | Defaults to `False`; keep disabled for a public service. |
+| `CONNECT_REQUESTS_PER_MINUTE` | No | Defaults to 10 requests per IP. |
+| `ASK_REQUESTS_PER_MINUTE` | No | Defaults to 6 requests per IP. |
 
-## Tech stack
+Production startup fails when required secrets or services are not configured. If Redis is unavailable, the API fails closed instead of silently turning off rate limits.
 
-- **Django** — backend
-- **psycopg2** — Postgres driver
-- **OpenAI SDK** — universal LLM client (works with any OpenAI-compatible provider)
-- **Vanilla JS** — no build step, no framework
-- **localStorage** — conversations and settings are saved in the browser; credentials are also sent to the backend for requests
+## Security and privacy
 
-## Project structure
+- Users must provide an AI provider API key for each chat request. The API does not fall back to a server-owned key.
+- The backend only accepts configured AI providers; clients cannot supply an arbitrary provider URL.
+- Database hosts are resolved and pinned to a checked IP. Public deployments reject local and private network destinations.
+- Schema inspection and query execution use read-only PostgreSQL transactions. Queries are parsed as one `SELECT`; nested writes and known dangerous PostgreSQL functions are rejected.
+- Database connections, statement execution, concurrent work per IP, request rates, schema size, and result size are bounded.
+- The API does not persist submitted database or AI credentials. They are sent to Pigeon to service requests; the selected AI provider receives the question, schema, and query results. The browser may save settings in local storage.
+- Use a dedicated PostgreSQL user with only the minimum read privileges required. A read-only transaction is not a substitute for least-privilege database credentials; some user-defined functions can have side effects.
 
-```
-pigeon/
-├── config/           # Django project settings
-├── core/
-│   ├── templates/
-│   │   ├── landing.html
-│   │   └── connect.html
-│   ├── views.py      # connect_page, landing_page, ask_ai
-│   └── urls.py
-├── docs/
-│   └── screenshot.png
-├── manage.py
-├── requirements.txt
+Anonymous rate limits protect the hosted service and do not limit the user's AI provider credits. Per-IP limits are a baseline; public services should also use the hosting provider's edge and DDoS protections.
+
+## Repository layout
+
+```text
+.
+├── backend/       # Django API and production configuration
+├── public/        # Frontend static assets
+├── src/           # React application
+├── package.json
 └── README.md
 ```
 
-## Roadmap
-
-- [ ] CSV export on result tables
-- [ ] Mobile responsive layout
-- [ ] Query explanation mode (AI explains the SQL)
-- [ ] Schema browser sidebar
-- [ ] Support for MySQL / SQLite
-- [ ] Docker one-command setup
-
-## Contributing
-
-Pull requests welcome. For major changes, open an issue first.
-
-## Author
-
-Built by [@Harilol](https://github.com/Harilol).
-
-If you find Pigeon useful, ⭐ the repo and share it.
-
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [`LICENSE`](./LICENSE).
