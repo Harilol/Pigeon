@@ -4,6 +4,8 @@ Pigeon lets you explore PostgreSQL data with natural-language questions. Bring y
 
 The repository contains a React/Vite frontend at the root and a Django API in [`backend/`](./backend/).
 
+![Pigeon landing page](./docs/screenshot.png)
+
 ## Features
 
 - Connect to PostgreSQL and inspect its public-table schema.
