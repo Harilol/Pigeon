@@ -10,29 +10,93 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 import os
-import dj_database_url
 from pathlib import Path
+from urllib.parse import urlsplit
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-# import os
-from cryptography.fernet import Fernet
-# Run Fernet.generate_key() once in python shell and paste it here
-FERNET_KEY = os.getenv("FERNET_KEY", "xLkbSzh9U2Q9zgaCAFv_yv67Y-wiCmZR5TcGd-mhr2Y=") 
-# import os
+load_dotenv(BASE_DIR / ".env")
 
-# SECRET_KEY: read from env, fall back to a dev key
-SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-only-insecure-key-change-in-production')
 
-# DEBUG: default True locally, False in production
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+def _env_bool(name, default):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
-# ALLOWED_HOSTS: allow localhost + Render's hostname
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+def _env_csv(name, default=()):
+    value = os.getenv(name)
+    if value is None:
+        return list(default)
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+DEBUG = _env_bool("DEBUG", False)
+SECRET_KEY = os.getenv("SECRET_KEY", "")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured(
+            "SECRET_KEY must be configured when DEBUG is disabled."
+        )
+    SECRET_KEY = "local-development-only-insecure-key"
+
+ALLOWED_HOSTS = _env_csv(
+    "ALLOWED_HOSTS", ("localhost", "127.0.0.1") if DEBUG else ()
+)
+if not DEBUG and len(SECRET_KEY) < 50:
+    raise ImproperlyConfigured("Production SECRET_KEY must be at least 50 characters.")
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+if not DEBUG and not ALLOWED_HOSTS:
+    raise ImproperlyConfigured("ALLOWED_HOSTS must be set in production.")
+if not DEBUG and "*" in ALLOWED_HOSTS:
+    raise ImproperlyConfigured("ALLOWED_HOSTS must not contain '*' in production.")
+
+database_url = os.getenv("DATABASE_URL")
+redis_url = os.getenv("REDIS_URL")
+if not DEBUG and not database_url:
+    raise ImproperlyConfigured(
+        "DATABASE_URL must point to a persistent database in production."
+    )
+if not DEBUG and not redis_url:
+    raise ImproperlyConfigured(
+        "REDIS_URL is required for shared production rate limiting."
+    )
+if not DEBUG and database_url.startswith("sqlite:"):
+    raise ImproperlyConfigured("Production DATABASE_URL must use a persistent database.")
+if not DEBUG and urlsplit(redis_url).scheme not in {"redis", "rediss"}:
+    raise ImproperlyConfigured("REDIS_URL must use redis:// or rediss://.")
+
+database_sslmode = os.getenv("DATABASE_SSLMODE", "prefer" if DEBUG else "require")
+if database_sslmode not in {"disable", "allow", "prefer", "require", "verify-ca", "verify-full"}:
+    raise ImproperlyConfigured("DATABASE_SSLMODE is not a supported PostgreSQL SSL mode.")
+
+try:
+    trusted_proxy_count = os.getenv("TRUSTED_PROXY_COUNT")
+    if not DEBUG and trusted_proxy_count is None:
+        raise ImproperlyConfigured(
+            "Set TRUSTED_PROXY_COUNT for the production hosting proxy."
+        )
+    TRUSTED_PROXY_COUNT = int(os.getenv("TRUSTED_PROXY_COUNT", "0"))
+    CONNECT_REQUESTS_PER_MINUTE = int(os.getenv("CONNECT_REQUESTS_PER_MINUTE", "10"))
+    ASK_REQUESTS_PER_MINUTE = int(os.getenv("ASK_REQUESTS_PER_MINUTE", "6"))
+except ValueError as exc:
+    raise ImproperlyConfigured("Proxy and request limits must be integers.") from exc
+
+if TRUSTED_PROXY_COUNT < 0:
+    raise ImproperlyConfigured("TRUSTED_PROXY_COUNT cannot be negative.")
+if CONNECT_REQUESTS_PER_MINUTE < 1 or ASK_REQUESTS_PER_MINUTE < 1:
+    raise ImproperlyConfigured("Request limits must be positive integers.")
+
+ALLOW_PRIVATE_DATABASE_HOSTS = _env_bool("ALLOW_PRIVATE_DATABASE_HOSTS", DEBUG)
+DATABASE_SSLMODE = database_sslmode
 
 # Application definition
 
@@ -44,9 +108,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -80,19 +146,38 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-import dj_database_url
-
 # Pigeon doesn't need its own database — it connects to users' Postgres DBs.
-# But Django requires a DATABASES setting to exist. We give it SQLite for
-# internal things (admin, sessions) that Django handles automatically.
+# Django uses this persistent database for its own internal state.
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3'),
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
-        ssl_require=False
+        ssl_require=not DEBUG,
     )
 }
 
+CACHES = {
+    "default": (
+        {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "pigeon-local-throttles",
+        }
+        if DEBUG
+        else {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": redis_url,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": {"max_connections": 100},
+            },
+            "KEY_PREFIX": "pigeon",
+            "TIMEOUT": 60,
+        }
+    )
+}
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 64 * 1024
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 20
 
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
@@ -139,11 +224,52 @@ STORAGES = {
     },
 }
 
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
-
 MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+    "default": {
+        "BACKEND": os.getenv(
+            "EMAIL_BACKEND",
+            (
+                "django.core.mail.backends.console.EmailBackend"
+                if DEBUG
+                else "django.core.mail.backends.smtp.EmailBackend"
+            ),
+        ),
     },
 }
+
+
+CORS_ALLOWED_ORIGINS = _env_csv(
+    "CORS_ALLOWED_ORIGINS",
+    ("http://localhost:5173", "http://127.0.0.1:5173") if DEBUG else (),
+)
+CORS_ALLOW_CREDENTIALS = False
+if not DEBUG and not CORS_ALLOWED_ORIGINS:
+    raise ImproperlyConfigured(
+        "CORS_ALLOWED_ORIGINS must contain the production frontend origin."
+    )
+if not DEBUG and any(
+    urlsplit(origin).scheme != "https"
+    or not urlsplit(origin).netloc
+    or urlsplit(origin).path not in {"", "/"}
+    or urlsplit(origin).query
+    or urlsplit(origin).fragment
+    or urlsplit(origin).username
+    or urlsplit(origin).password
+    for origin in CORS_ALLOWED_ORIGINS
+):
+    raise ImproperlyConfigured(
+        "Production CORS_ALLOWED_ORIGINS must contain exact HTTPS origins."
+    )
+CORS_URLS_REGEX = r"^/api/.*$"
+
+if not DEBUG:
+    SECURE_SSL_REDIRECT = _env_bool("SECURE_SSL_REDIRECT", True)
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31_536_000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "same-origin"
+    X_FRAME_OPTIONS = "DENY"
